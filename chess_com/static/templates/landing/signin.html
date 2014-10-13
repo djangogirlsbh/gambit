@@ -1,0 +1,49 @@
+{% extends 'base/page.html' %}
+{% block page_title %}Gambit - Sign in{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-3">
+  </div>
+  
+  <div class="well col-lg-6">
+    <form action="signin" method="post" class="form-horizontal">{% csrf_token %}
+      <legend>Sign in</legend>
+    
+      {% if signin_error %}
+      <div class="form-group">
+        <p class="text-danger">{{ signin_error }}</p>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_username" class="col-lg-2 control-lable">Username</label>
+        <div class="col-lg-10">
+         {{ signin_form.username }}
+         {% if signin_form.username.errors %}
+         <p class="text-danger">{{ signin_form.username.errors|striptags }}</p>
+         {% endif %}
+        </div>
+      </div>
+    
+      <div class="form-group">
+        <label for="id_password" class="col-lg-2 control-lable">Password</label>
+        <div class="col-lg-10">
+         {{ signin_form.password }}
+         {% if signin_form.password.errors %}
+         <p class="text-danger">{{ signin_form.password.errors|striptags }}</p>
+         {% endif %}
+        </div>
+      </div>
+    
+      <div class="form-group">
+        <div class="col-lg-10 col-lg-offset-2">
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <div class="col-lg-3">
+  </div>
+</div>
+{% endblock %}
