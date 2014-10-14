@@ -9,7 +9,136 @@
 
 {% block content %}
 <div class="col-lg-12">
+
 <h1>Game Repository</h1>
+
+<div class="panel-group" id="accordion">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h2 class="panel-title">
+        <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+          My Chess.com Games
+        </a>
+      </h2>
+    </div>
+    <div id="collapseOne" class="panel-collapse collapse in">
+      <div class="panel-body">
+        <table id="chesscom-table" class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>White</th>
+              <th>White ELO</th>
+              <th>Black</th>
+              <th>Black ELO</th>
+              <th>Result</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if chesscom_games %}
+            {% for game in chesscom_games %}
+            <tr>
+              <td>{{ game.date_played }}</td>
+              <td>{{ game.white_name }}</td>
+              <td>{{ game.white_rating }}</td>
+              <td>{{ game.black_name }}</td>
+              <td>{{ game.black_rating }}</td>
+              <td>{{ game.game_result }}</td>
+              <td><a href="#">Details</a></td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h2 class="panel-title">
+        <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+          My Other Games
+        </a>
+      </h2>
+    </div>
+    <div id="collapseTwo" class="panel-collapse collapse">
+      <div class="panel-body">
+        <table id="users-table" class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>White</th>
+              <th>White ELO</th>
+              <th>Black</th>
+              <th>Black ELO</th>
+              <th>Result</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if users_games %}
+            {% for game in users_games %}
+            <tr>
+              <td>{{ game.date_played }}</td>
+              <td>{{ game.white_name }}</td>
+              <td>{{ game.white_rating }}</td>
+              <td>{{ game.black_name }}</td>
+              <td>{{ game.black_rating }}</td>
+              <td>{{ game.game_result }}</td>
+              <td><a href="#">Details</a></td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h2 class="panel-title">
+        <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">
+          Other Players' Games
+        </a>
+      </h2>
+    </div>
+    <div id="collapseThree" class="panel-collapse collapse">
+      <div class="panel-body">
+        <table id="other-table" class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>White</th>
+              <th>White ELO</th>
+              <th>Black</th>
+              <th>Black ELO</th>
+              <th>Result</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if other_games %}
+            {% for game in other_games %}
+            <tr>
+              <td>{{ game.date_played }}</td>
+              <td>{{ game.white_name }}</td>
+              <td>{{ game.white_rating }}</td>
+              <td>{{ game.black_name }}</td>
+              <td>{{ game.black_rating }}</td>
+              <td>{{ game.game_result }}</td>
+              <td><a href="#">Details</a></td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% if users_jobs %}
 <h3>Import Jobs</h3>
@@ -35,39 +164,6 @@ bug.</p>
   </tbody>
 </table>
 {% endif %}
-
-<h3>Games</h3>
-<table id="games-table" class="table table-striped table-hover">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>White</th>
-      <th>White ELO</th>
-      <th>Black</th>
-      <th>Black ELO</th>
-      <th>Result</th>
-      <th>My Game</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% if users_games %}
-    {% for game in users_games %}
-    <tr>
-      <td>{{ game.date_played }}</td>
-      <td>{{ game.white_name }}</td>
-      <td>{{ game.white_rating }}</td>
-      <td>{{ game.black_name }}</td>
-      <td>{{ game.black_rating }}</td>
-      <td>{{ game.game_result }}</td>
-      <td>{% if game.users_game %}Yes{% else %}No{% endif %}</td>
-      <td><a href="#">Details</a></td>
-    </tr>
-    {% endfor %}
-    {% else %}
-    {% endif %}
-  </tbody>
-</table>
 {% endblock %}
 
 {% block scripts %}
@@ -75,7 +171,13 @@ bug.</p>
 <script src="{% static "js/dataTables.bootstrap.js" %}"></script>
 <script>
     $(document).ready(function() {
-        $('#games-table').dataTable({"order": [[0, "desc"]]});
+        $('#chesscom-table').dataTable({"order": [[0, "desc"]]});
+    } );
+    $(document).ready(function() {
+        $('#users-table').dataTable({"order": [[0, "desc"]]});
+    } );
+    $(document).ready(function() {
+        $('#other-table').dataTable({"order": [[0, "desc"]]});
     } );
 </script>
 {% endblock%}

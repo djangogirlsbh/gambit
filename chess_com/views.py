@@ -153,9 +153,20 @@ def track(request):
 def games(request):
     context = {}
 
-    users_games = ChessGame.objects.filter(uploaded_by=request.user)
+    chesscom_games = ChessGame.objects.filter(uploaded_by=request.user,
+        users_game=True,
+        chesscom_id__isnull=False)
+    users_games = ChessGame.objects.filter(uploaded_by=request.user,
+        users_game=True,
+        chesscom_id__isnull=True)
+    other_games = ChessGame.objects.filter(uploaded_by=request.user,
+        users_game=False)
+
     users_jobs = ImportJob.objects.filter(user=request.user)
+
+    context['chesscom_games'] = chesscom_games
     context['users_games'] = users_games
+    context['other_games'] = other_games
     context['users_jobs'] = users_jobs
 
     return render(request,
