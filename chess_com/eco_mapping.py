@@ -1,4 +1,5 @@
 eco_mapping = {
+    "unknown": "A00 Uncommon Opening",
 	"1.b3": "A01 Nimzovich-Larsen Attack",
 	"1.f4": "A02 Bird's Opening",
 	"1.f4 d5": "A03 Bird's Opening",

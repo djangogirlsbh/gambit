@@ -2,9 +2,10 @@
 {% block page_title %}Gambit - Track progress{% endblock %}
 {% block content %}
 <div class="col-lg-12">
-{% if stats_error %}
-<p class="text-danger">{{ stats_error }}</p>
-{% else %}
+  {% if stats_error %}
+  <p class="text-danger">{{ stats_error }}</p>
+  {% else %}
+
   <h1>Chess.com Progress</h1>
 
   <div class="col-lg-12">
@@ -21,7 +22,6 @@
       <div class="col-lg-1">
       </div>
       <div class="col-lg-4">
-        <p></p>
         <p><strong>Games</strong>: {{ overall_played }}</p>
         <p><strong>Won</strong>: {{ overall_won }}</p>
         <p><strong>Lost</strong>: {{ overall_lost }}</p>
@@ -56,13 +56,42 @@
       <div class="col-lg-1">
       </div>
       <div class="col-lg-4">
-        <p></p>
         <p><strong>Games</strong>: {{ black_played }}</p>
         <p><strong>Won</strong>: {{ black_won }}</p>
         <p><strong>Lost</strong>: {{ black_lost }}</p>
         <p><strong>Drawn</strong>: {{ black_drawn }}</p>
       </div>
     </div>
+  </div>
+
+  <div class="col-lg-6">
+    <h3>Common White Games</h3>
+    <ol>
+    {% for name, data in white_games %}
+      <li>{{ name }}</li>
+      <ul>
+        <li>Played: {{ data.played }}</li>
+        <li>Won: {{ data.won }}</li>
+        <li>Lost: {{ data.lost }}</li>
+        <li>Drawn: {{ data.drawn }}</li>
+      </ul>
+    {% endfor %}
+    </ol>
+  </div>
+
+  <div class="col-lg-6">
+    <h3>Common Black Games</h3>
+    <ol>
+    {% for name, data in black_games %}
+      <li>{{ name }}</li>
+      <ul>
+        <li>Played: {{ data.played }}</li>
+        <li>Won: {{ data.won }}</li>
+        <li>Lost: {{ data.lost }}</li>
+        <li>Drawn: {{ data.drawn }}</li>
+      </ul>
+    {% endfor %}
+    </ol>
   </div>
 {% endif %}
 </div>

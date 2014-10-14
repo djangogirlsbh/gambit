@@ -26,6 +26,7 @@ class ChessGame(models.Model):
     time_control = models.CharField(max_length=32, blank=True)
     total_moves = models.IntegerField()
     date_played = models.DateField()
+    eco_details = models.CharField(max_length=128, blank=True)
 
     uploaded_by = models.ForeignKey(User)
     users_game = models.BooleanField()

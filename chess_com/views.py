@@ -168,6 +168,7 @@ def track(request):
         white_played, white_won, white_lost, white_drawn = 0, 0, 0, 0
         black_played, black_won, black_lost, black_drawn = 0, 0, 0, 0
         ratings, rating_labels = [], []
+        white_games, black_games = {}, {}
 
         num_labels = 10 if len(games) > 20 else 5
         skipped_labels = len(games) / num_labels
@@ -179,32 +180,66 @@ def track(request):
                 rating_labels.append('')
 
             if game.white_name == player:
+                if game.eco_details not in white_games:
+                    white_games[game.eco_details] = {
+                        'played': 1,
+                        'won': 0,
+                        'lost': 0,
+                        'drawn': 0,
+                    }
+                else:
+                    white_games[game.eco_details]['played'] += 1
+
                 if game.game_result == '1-0':
                     overall_won += 1
                     white_won += 1
+                    white_games[game.eco_details]['won'] += 1
                 elif game.game_result == '0-1':
                     overall_lost += 1
                     white_lost += 1
+                    white_games[game.eco_details]['lost'] += 1
                 else:
                     overall_drawn += 1
                     white_drawn += 1
+                    white_games[game.eco_details]['drawn'] += 1
                 white_played += 1
                 ratings.append(int(game.white_rating))
             else:
+                if game.eco_details not in black_games:
+                    black_games[game.eco_details] = {
+                        'played': 1,
+                        'won': 0,
+                        'lost': 0,
+                        'drawn': 0,
+                    }
+                else:
+                    black_games[game.eco_details]['played'] += 1
+
                 if game.game_result == '1-0':
                     overall_lost += 1
                     black_lost += 1
+                    black_games[game.eco_details]['lost'] += 1
                 elif game.game_result == '0-1':
                     overall_won += 1
                     black_won += 1
+                    black_games[game.eco_details]['won'] += 1
                 else:
                     overall_drawn += 1
                     black_drawn += 1
+                    black_games[game.eco_details]['drawn'] += 1
                 black_played += 1
                 ratings.append(int(game.black_rating))
 
         ratings.reverse()
         rating_labels.reverse()
+        white_games = sorted(white_games.items(),
+            key=lambda x: x[1]['played'],
+            reverse=True)
+        white_games = white_games[:3]
+        black_games = sorted(black_games.items(),
+            key=lambda x: x[1]['played'],
+            reverse=True)
+        black_games = black_games[:3]
 
         context['overall_played'] = len(games)
         context['overall_won'] = overall_won
@@ -220,6 +255,8 @@ def track(request):
         context['black_drawn'] = black_drawn
         context['rating_by_game'] = ratings
         context['rating_labels'] = rating_labels
+        context['white_games'] = white_games
+        context['black_games'] = black_games
 
     return render(request,
         'users/track.html',
@@ -312,6 +349,7 @@ def import_chesscom_games(user, username, users_games):
                 time_control=pgn_game['time_control'],
                 total_moves=pgn_game['total_moves'],
                 date_played=pgn_game['date_played'],
+                eco_details=pgn_game['eco_details'],
                 uploaded_by=user,
                 users_game=users_games,
                 chesscom_id=pgn_game['chesscom_id'],
@@ -340,6 +378,7 @@ def upload_pgn(pgn_file, user, users_game):
         result = 'Please only submit files less than 10,000 bytes.'
     else:
         parser = PGNParser(pgn_file.read())
+        mapper = ECOMapper()
 
         white_name = parser.extract_white_name()
         black_name = parser.extract_black_name()
@@ -349,6 +388,7 @@ def upload_pgn(pgn_file, user, users_game):
         time_control = parser.extract_time_control()
         total_moves = parser.extract_total_moves()
         date_played = parser.extract_date_played()
+        eco_details = mapper.get_eco_details(pgn_file.read())
 
         try:
             game = ChessGame.objects.create(white_name=white_name,
@@ -359,6 +399,7 @@ def upload_pgn(pgn_file, user, users_game):
                 time_control=time_control,
                 total_moves=total_moves,
                 date_played=date_played,
+                eco_details=eco_details,
                 uploaded_by=user,
                 users_game=users_game,
                 raw_pgn=pgn_file)

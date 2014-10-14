@@ -13,6 +13,7 @@ from urllib2 import urlopen
 
 from django.contrib.auth.models import User
 
+from eco_mapper import ECOMapper
 from models import ChessGame
 from pgn_parser import PGNParser
 
@@ -67,6 +68,7 @@ class UserGamesCrawler(object):
                 * date_played
                 * raw_pgn
                 * chesscom_id
+                * eco_details
         """
         result = []
 
@@ -140,6 +142,7 @@ class UserGamesCrawler(object):
                 * date_played
                 * raw_pgn
                 * chesscom_id
+                * eco_details
 
         Arguments:
             game_id<int> -- Chess.com game ID.
@@ -152,6 +155,7 @@ class UserGamesCrawler(object):
         url = self.BASE_DOWNLOAD_PATH % str(game_id)
         pgn_data = urlopen(url).read()
         parser = PGNParser(pgn_data)
+        mapper = ECOMapper()
 
         result['white_name'] = parser.extract_white_name()
         result['black_name'] = parser.extract_black_name()
@@ -163,6 +167,7 @@ class UserGamesCrawler(object):
         result['date_played'] = parser.extract_date_played()
         result['raw_pgn'] = pgn_data
         result['chesscom_id'] = game_id
+        result['eco_details'] = mapper.get_eco_details(pgn_data)
 
         return result
 
