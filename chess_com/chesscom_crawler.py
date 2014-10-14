@@ -90,7 +90,7 @@ class UserGamesCrawler(object):
                 job.save()
                 sleep(2)
 
-            page = self.next_page(page, page_number) if page else None
+            page = self.next_page(page, page_number)
             page_number += 1
 
         return result
@@ -184,7 +184,9 @@ class UserGamesCrawler(object):
             soup = BeautifulSoup(html)
             anchors = soup.find_all('a',
                 href=re.compile('page=%d$' % (page_number + 1)))
-            url = self.BASE_URL + anchors[0]['href']
+            path = anchors[0]['href']
+            accurate_path = path[1:] if path[0] == '/' else path
+            url = self.BASE_URL + accurate_path
             result = urlopen(url).read()
         except Exception:
             pass
