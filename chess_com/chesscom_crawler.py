@@ -179,13 +179,14 @@ class UserGamesCrawler(object):
             The HTML contents of the next page, or None if there is not one.
         """
         result = None
-        expression = '<a href="(?P<path>.+page=%d)' % (page_number + 1)
-        matches = re.search(expression, html)
 
         try:
-            url = self.BASE_URL + matches.group('path')
+            soup = BeautifulSoup(html)
+            anchors = soup.find_all('a',
+                href=re.compile('page=%d$' % (page_number + 1)))
+            url = self.BASE_URL + anchors[0]['href']
             result = urlopen(url).read()
-        except:
+        except Exception:
             pass
 
         return result

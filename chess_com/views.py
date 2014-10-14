@@ -145,8 +145,85 @@ def import_games(request):
 
 @login_required
 def track(request):
+    context = {}
+
+    games = ChessGame.objects.filter(uploaded_by=request.user,
+        users_game=True,
+        chesscom_id__isnull=False)
+
+    if len(games) < 2:
+        context['stats_error'] = 'Cannot create stats with less than two games.'
+    else:
+        player = None
+        game_1, game_2 = games[0], games[1]
+
+        if game_1.white_name == game_2.white_name:
+            player = game_1.white_name
+        elif game_1.white_name == game_2.black_name:
+            player = game_1.white_name
+        elif game_1.black_name == game_2.black_name:
+            player = game_1.black_name
+
+        overall_won, overall_lost, overall_drawn = 0, 0, 0
+        white_played, white_won, white_lost, white_drawn = 0, 0, 0, 0
+        black_played, black_won, black_lost, black_drawn = 0, 0, 0, 0
+        ratings, rating_labels = [], []
+
+        num_labels = 10 if len(games) > 20 else 5
+        skipped_labels = len(games) / num_labels
+
+        for count, game in enumerate(games):
+            if count % skipped_labels == 0:
+                rating_labels.append(str(game.date_played))
+            else:
+                rating_labels.append('')
+
+            if game.white_name == player:
+                if game.game_result == '1-0':
+                    overall_won += 1
+                    white_won += 1
+                elif game.game_result == '0-1':
+                    overall_lost += 1
+                    white_lost += 1
+                else:
+                    overall_drawn += 1
+                    white_drawn += 1
+                white_played += 1
+                ratings.append(int(game.white_rating))
+            else:
+                if game.game_result == '1-0':
+                    overall_lost += 1
+                    black_lost += 1
+                elif game.game_result == '0-1':
+                    overall_won += 1
+                    black_won += 1
+                else:
+                    overall_drawn += 1
+                    black_drawn += 1
+                black_played += 1
+                ratings.append(int(game.black_rating))
+
+        ratings.reverse()
+        rating_labels.reverse()
+
+        context['overall_played'] = len(games)
+        context['overall_won'] = overall_won
+        context['overall_lost'] = overall_lost
+        context['overall_drawn'] = overall_drawn
+        context['white_played'] = white_played
+        context['white_won'] = white_won
+        context['white_lost'] = white_lost
+        context['white_drawn'] = white_drawn
+        context['black_played'] = black_played
+        context['black_won'] = black_won
+        context['black_lost'] = black_lost
+        context['black_drawn'] = black_drawn
+        context['rating_by_game'] = ratings
+        context['rating_labels'] = rating_labels
+
     return render(request,
         'users/track.html',
+        context,
         context_instance=RequestContext(request))
 
 @login_required

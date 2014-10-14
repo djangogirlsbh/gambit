@@ -1,4 +1,174 @@
 {% extends 'base/page.html' %}
 {% block page_title %}Gambit - Track progress{% endblock %}
 {% block content %}
+<div class="col-lg-12">
+{% if stats_error %}
+<p class="text-danger">{{ stats_error }}</p>
+{% else %}
+  <h1>Chess.com Progress</h1>
+
+  <div class="col-lg-12">
+    <h3>Rating by Game</h3>
+    <canvas id="rating-line" height="100%"></canvas>
+  </div>
+
+  <div class="col-lg-4">
+    <h3>Overall</h3>
+    <div class="row">
+      <div class="col-lg-7">
+        <canvas id="overall-pie" width="100%" height="100%"></canvas>
+      </div>
+      <div class="col-lg-1">
+      </div>
+      <div class="col-lg-4">
+        <p></p>
+        <p><strong>Games</strong>: {{ overall_played }}</p>
+        <p><strong>Won</strong>: {{ overall_won }}</p>
+        <p><strong>Lost</strong>: {{ overall_lost }}</p>
+        <p><strong>Drawn</strong>: {{ overall_drawn }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <h3>As White</h3>
+    <div class="row">
+      <div class="col-lg-7">
+        <canvas id="white-pie" width="100%" height="100%"></canvas>
+      </div>
+      <div class="col-lg-1">
+      </div>
+      <div class="col-lg-4">
+        <p><strong>Games</strong>: {{ white_played }}</p>
+        <p><strong>Won</strong>: {{ white_won }}</p>
+        <p><strong>Lost</strong>: {{ white_lost }}</p>
+        <p><strong>Drawn</strong>: {{ white_drawn }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <h3>As Black</h3>
+    <div class="row">
+      <div class="col-lg-7">
+        <canvas id="black-pie" width="100%" height="100%"></canvas>
+      </div>
+      <div class="col-lg-1">
+      </div>
+      <div class="col-lg-4">
+        <p></p>
+        <p><strong>Games</strong>: {{ black_played }}</p>
+        <p><strong>Won</strong>: {{ black_won }}</p>
+        <p><strong>Lost</strong>: {{ black_lost }}</p>
+        <p><strong>Drawn</strong>: {{ black_drawn }}</p>
+      </div>
+    </div>
+  </div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% load staticfiles %}
+<script src="{% static "js/Chart.js" %}"></script>
+<script>
+    var overall_data = [
+        {
+            value: {{ overall_lost }},
+            color:"#F7464A",
+            highlight: "#FF5A5E",
+            label: "Lost"
+        },
+        {
+            value: {{ overall_won }},
+            color: "#46BFBD",
+            highlight: "#5AD3D1",
+            label: "Won"
+        },
+        {
+            value: {{ overall_drawn }},
+            color: "#FDB45C",
+            highlight: "#FFC870",
+            label: "Drawn"
+        }
+    ]
+
+    var white_data = [
+        {
+            value: {{ white_lost }},
+            color:"#F7464A",
+            highlight: "#FF5A5E",
+            label: "Lost"
+        },
+        {
+            value: {{ white_won }},
+            color: "#46BFBD",
+            highlight: "#5AD3D1",
+            label: "Won"
+        },
+        {
+            value: {{ white_drawn }},
+            color: "#FDB45C",
+            highlight: "#FFC870",
+            label: "Drawn"
+        }
+    ]
+
+    var black_data = [
+        {
+            value: {{ black_lost }},
+            color:"#F7464A",
+            highlight: "#FF5A5E",
+            label: "Lost"
+        },
+        {
+            value: {{ black_won }},
+            color: "#46BFBD",
+            highlight: "#5AD3D1",
+            label: "Won"
+        },
+        {
+            value: {{ black_drawn }},
+            color: "#FDB45C",
+            highlight: "#FFC870",
+            label: "Drawn"
+        }
+    ]
+
+    var rating_data = {
+        labels: {{ rating_labels|safe }},
+        datasets: [
+            {
+                label: "My Rating",
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,1)",
+                data: {{ rating_by_game|safe }}
+            }
+        ]
+    };
+
+    var overall_ctx = $("#overall-pie").get(0).getContext("2d");
+    var overall_chart = new Chart(overall_ctx).Doughnut(overall_data, {
+        "responsive": true,
+    });
+
+    var white_ctx = $("#white-pie").get(0).getContext("2d");
+    var white_chart = new Chart(white_ctx).Doughnut(white_data, {
+        "responsive": true,
+    });
+
+    var black_ctx = $("#black-pie").get(0).getContext("2d");
+    var black_chart = new Chart(black_ctx).Doughnut(black_data, {
+        "responsive": true,
+    });
+
+    var rating_ctx = $("#rating-line").get(0).getContext("2d");
+    var rating_chart = new Chart(rating_ctx).Line(rating_data, {
+        "responsive": true,
+        "showTooltips": false,
+    });
+</script>
 {% endblock %}
