@@ -18,4 +18,8 @@ urlpatterns = patterns('',
     url(r'^register', 'chess_com.views.register', name='register'),
     url(r'^signin', 'chess_com.views.signin', name='signin'),
     url(r'^signout', 'chess_com.views.signout', name='signout'),
+
+    url(r'^import', 'chess_com.views.import_games', name='import'),
+    url(r'^games', 'chess_com.views.games', name='games'),
+    url(r'^track', 'chess_com.views.track', name='track'),
 )

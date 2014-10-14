@@ -1,0 +1,83 @@
+{% extends 'base/page.html' %}
+{% block page_title %}Gambit - Import games{% endblock %}
+{% block content %}
+<div class="row">
+  
+  <div class="well col-lg-6">
+    <form action="import" method="post" enctype="multipart/form-data" class="form-horizontal">{% csrf_token %}
+      <legend>Import Games from Chess.com</legend>
+
+      <div class="form-group">
+        <label for="id_username" class="col-lg-2 control-lable">Username</label>
+        <div class="col-lg-10">
+         {{ import_form.username }}
+         {% if import_form.username.errors %}
+         <p class="text-danger">{{ import_form.username.errors|striptags }}</p>
+         {% endif %}
+        </div>
+      </div>
+    
+      <div class="form-group">
+        <label for="id_password" class="col-lg-2 control-lable">My games</label>
+        <div class="col-lg-10">
+         {{ import_form.password }}
+         {% if import_form.password.errors %}
+         <p class="text-danger">{{ import_form.password.errors|striptags }}</p>
+         {% endif %}
+        </div>
+      </div>
+    
+      <div class="form-group">
+        <div class="col-lg-10 col-lg-offset-2">
+          <button type="submit" name="import" class="btn btn-primary">Import</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <div class="well col-lg-6">
+    <form action="import" method="post" enctype="multipart/form-data" class="form-horizontal">{% csrf_token %}
+      <legend>Upload Game from PGN</legend>
+
+      {% if upload_error %}
+      <div class="form-group">
+        <p class="text-danger">{{ upload_error }}</p>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_users_game" class="col-lg-2 control-lable">PGN file</label>
+        <div class="col-lg-10">
+          <div class="input-group">
+            <span class="input-group-btn">
+                <span class="btn btn-primary btn-file">
+                Select file... {{ upload_form.pgn_file }}
+                </span>
+            </span>
+            <input type="text" class="form-control" readonly>
+          </div>
+          {% if upload_form.pgn_file.errors %}
+          <p class="text-danger">{{ upload_form.pgn_file.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_users_game" class="col-lg-2 control-lable">My game</label>
+        <div class="col-lg-10">
+          {{ upload_form.users_game }}
+          {% if upload_form.users_game.errors %}
+          <p class="text-danger">{{ upload_form.users_game.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      </div>
+    
+      <div class="form-group">
+        <div class="col-lg-10 col-lg-offset-2">
+          <button type="submit" name="upload" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

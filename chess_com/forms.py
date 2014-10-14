@@ -40,7 +40,8 @@ class RegistrationForm(forms.Form):
 
     def clean(self):
         """
-        Extra custom log for ensuring user registration proceeds as it ought to.
+        Extra custom logic for ensuring user registration proceeds as it ought
+        to.
         """
         cleaned_data = super(RegistrationForm, self).clean()
 
@@ -64,3 +65,11 @@ class RegistrationForm(forms.Form):
                 self._errors['password'] = 'Your passwords must match.'
 
         return cleaned_data
+
+class UploadPGNGameForm(forms.Form):
+    """
+    User uploading a PGN file.
+    """
+    pgn_file = forms.FileField(widget=forms.ClearableFileInput(
+        attrs={'class': 'form-control'}))
+    users_game = forms.BooleanField(required=False)

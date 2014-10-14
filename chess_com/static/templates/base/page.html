@@ -24,9 +24,9 @@
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             {% if user.is_authenticated %}
-            <li><a href="#">Games</a></li>
-            <li><a href="#">Track</a></li>
-            <li><a href="#">Import</a></li>
+            <li><a href="games">Games</a></li>
+            <li><a href="track">Track</a></li>
+            <li><a href="import">Import</a></li>
             {% else %}
             <li><a href="about">About</a></li>
             <li><a href="register">Register</a></li>
@@ -50,5 +50,6 @@
     </div>
     <script src="{% static "js//jquery-1.10.2.min.js" %}"></script>
     <script src="{% static "js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/sexy-upload.js" %}"></script>
   </body>
 </html>
