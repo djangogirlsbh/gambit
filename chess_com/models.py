@@ -29,5 +29,14 @@ class ChessGame(models.Model):
 
     uploaded_by = models.ForeignKey(User)
     users_game = models.BooleanField()
+    chesscom_id = models.BigIntegerField(blank=True)
 
     raw_pgn = models.CharField(max_length=10000)
+
+class ImportJob(models.Model):
+    """
+    Represents a currently executing job to import a user's Chess.com games.
+    This is deleted upon job completion.
+    """
+    user = models.ForeignKey(User)
+    games_processed = models.IntegerField()

@@ -11,6 +11,9 @@ import re
 from time import sleep
 from urllib2 import urlopen
 
+from django.contrib.auth.models import User
+
+from models import ChessGame
 from pgn_parser import PGNParser
 
 # ------------------------------------------------------------------------------
@@ -43,9 +46,13 @@ class UserGamesCrawler(object):
 
         self.username = username
 
-    def get_live_games(self):
+    def get_live_games(self, user, job):
         """
         Gets the live games played by the user.
+
+        Arguments:
+            user<User>     -- User searching for games.
+            job<ImportJob> -- Holds the status of the current import job.
 
         Returns:
             A list of dictionaries, each dictionary storing the PGN data from a
@@ -59,23 +66,31 @@ class UserGamesCrawler(object):
                 * total_moves
                 * date_played
                 * raw_pgn
-
-        TODO: Given a User object, only look for games not already imported.
+                * chesscom_id
         """
         result = []
 
-        params = self.BASE_ARCHIVE_PARAMS % (self.GAME_TYPES['live'],
-            self.username)
-        url = self.BASE_ARCHIVE_URL + params
+        recent_game_id = self.get_recent_game_id(user)
+        crawl_url = self.make_crawl_url(self.GAME_TYPES['live'])
+        page = urlopen(crawl_url).read()
+        page_number = 1
 
-        page, page_number = urlopen(url).read(), 1
         while page:
-            game_ids = self.get_game_ids(page)
+            game_ids = map(int, self.get_game_ids(page))
+
             for game_id in game_ids:
+                if game_id <= recent_game_id:
+                    page = None
+                    break
+
                 game = self.extract_pgn_data(game_id)
                 result.append(game)
+
+                job.games_processed += 1
+                job.save()
                 sleep(2)
-            page = self.next_page(page, page_number)
+
+            page = self.next_page(page, page_number) if page else None
             page_number += 1
 
         return result
@@ -124,17 +139,17 @@ class UserGamesCrawler(object):
                 * total_moves
                 * date_played
                 * raw_pgn
+                * chesscom_id
 
         Arguments:
-            game_id<string>   -- Chess.com game ID.
+            game_id<int> -- Chess.com game ID.
 
         Returns:
             Dictionary of parsed PGN data or None if not found.
         """
         result = {}
 
-        url = self.BASE_DOWNLOAD_PATH % game_id
-        print 'Download from: %s' % url
+        url = self.BASE_DOWNLOAD_PATH % str(game_id)
         pgn_data = urlopen(url).read()
         parser = PGNParser(pgn_data)
 
@@ -147,6 +162,7 @@ class UserGamesCrawler(object):
         result['total_moves'] = parser.extract_total_moves()
         result['date_played'] = parser.extract_date_played()
         result['raw_pgn'] = pgn_data
+        result['chesscom_id'] = game_id
 
         return result
 
@@ -171,5 +187,42 @@ class UserGamesCrawler(object):
             result = urlopen(url).read()
         except:
             pass
+
+        return result
+
+    def make_crawl_url(self, game_type):
+        """
+        Creates a starting crawling URL for the given game type.
+
+        Arguments:
+            game_type<string> -- Value of the Chess.com game type.
+
+        Returns:
+            Absolute URL to the starting crawl point.
+        """
+        params = self.BASE_ARCHIVE_PARAMS % (game_type, self.username)
+        url = self.BASE_ARCHIVE_URL + params
+        return url
+
+    def get_recent_game_id(self, user):
+        """
+        Finds the Chess.com ID of the the most recently played game currently
+        available in the database.
+
+        Arguments:
+            user<User> -- User to find most recent game's ID for.
+
+        Returns:
+            Chess.com game ID or -1 if none was found.
+        """
+        result = -1
+
+        users_games = ChessGame.objects.filter(uploaded_by=user,
+            chesscom_id__isnull=False)
+        games_ordered = users_games.order_by('chesscom_id')
+
+        if games_ordered:
+            most_recent_game = games_ordered[len(games_ordered) - 1]
+            result = most_recent_game.chesscom_id
 
         return result

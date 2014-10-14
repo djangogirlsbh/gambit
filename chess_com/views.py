@@ -15,7 +15,7 @@ from django.template import RequestContext
 from chesscom_crawler import UserGamesCrawler
 from forms import ImportChesscomForm, RegistrationForm, SigninForm, \
     UploadPGNGameForm
-from models import ChessGame
+from models import ChessGame, ImportJob
 from pgn_parser import PGNParser
 
 # ------------------------------------------------------------------------------
@@ -194,8 +194,15 @@ def import_chesscom_games(user, username, users_games):
     """
     result = None
 
+    # TODO: The following forks and executes asynchronously, while we return to
+    # caller. Crawler receives an ImportJob object and updates the object during
+    # it's progress. The view for games sends the template an import job if one
+    # exists for the user, so they can see the progress. Meanwhile, after we
+    # fork and return, the caller returns the user to the games page, where they
+    # will see the job's progress. This could be a good candidate for Redis.
     crawler = UserGamesCrawler(username)
-    live_games = crawler.get_live_games()
+    job = ImportJob.objects.create(user=user, games_processed=0)
+    live_games = crawler.get_live_games(user, job)
 
     try:
         for pgn_game in live_games:
@@ -209,10 +216,13 @@ def import_chesscom_games(user, username, users_games):
                 date_played=pgn_game['date_played'],
                 uploaded_by=user,
                 users_game=users_games,
+                chesscom_id=pgn_game['chesscom_id'],
                 raw_pgn=pgn_game['raw_pgn'])
             game.save()
     except Exception as error:
         result = 'Unable to import games. Details: %s' % error
+
+    job.delete()
 
     return result
 
@@ -258,6 +268,6 @@ def upload_pgn(pgn_file, user, users_game):
                 raw_pgn=pgn_file)
             game.save()
         except Exception as error:
-            result = 'Unable to parse PGN file. Details: %s' % error # TODO
+            result = 'Unable to parse PGN file.'
 
     return result
