@@ -12,7 +12,9 @@ from django.contrib.auth.models import User
 from django.shortcuts import redirect, render
 from django.template import RequestContext
 
-from forms import RegistrationForm, SigninForm, UploadPGNGameForm
+from chesscom_crawler import UserGamesCrawler
+from forms import ImportChesscomForm, RegistrationForm, SigninForm, \
+    UploadPGNGameForm
 from models import ChessGame
 from pgn_parser import PGNParser
 
@@ -109,18 +111,30 @@ def import_games(request):
                 users_game = form.cleaned_data['users_game']
                 error = upload_pgn(pgn_file, request.user, users_game)
                 if not error:
-                    return redirect('main')
+                    return redirect('games')
                 else:
                     context['upload_error'] = error
                     context['upload_form'] = form
             else:
-                context['upload_form'] = UploadPGNGameForm(request.POST)
+                context['upload_form'] = form
         elif 'import' in request.POST:
-            pass
-        else:
-            pass
+            form = ImportChesscomForm(request.POST)
+            if form.is_valid():
+                chesscom_username = form.cleaned_data['chesscom_username']
+                users_game = form.cleaned_data['users_game']
+                error = import_chesscom_games(request.user,
+                    chesscom_username,
+                    users_game)
+                if not error:
+                    return redirect('games')
+                else:
+                    context['import_error'] = error
+                    context['import_form'] = form
+            else:
+                context['import_form'] = form
     else:
         context['upload_form'] = UploadPGNGameForm()
+        context['import_form'] = ImportChesscomForm()
 
     return render(request,
         'users/import.html',
@@ -169,6 +183,39 @@ def signup_user(username, password):
 
     return result
 
+def import_chesscom_games(user, username, users_games):
+    """
+    Attempts to crawl Chess.com in search of a user's games, then imports them.
+
+    Arguments:
+        user<User>        -- User requesting the import.
+        username<string>  -- Username of Chess.com member.
+        users_games<bool> -- True if the username provided is the user.
+    """
+    result = None
+
+    crawler = UserGamesCrawler(username)
+    live_games = crawler.get_live_games()
+
+    try:
+        for pgn_game in live_games:
+            game = ChessGame.objects.create(white_name=pgn_game['white_name'],
+                black_name=pgn_game['black_name'],
+                white_rating=pgn_game['white_rating'],
+                black_rating=pgn_game['black_rating'],
+                game_result=pgn_game['game_result'],
+                time_control=pgn_game['time_control'],
+                total_moves=pgn_game['total_moves'],
+                date_played=pgn_game['date_played'],
+                uploaded_by=user,
+                users_game=users_games,
+                raw_pgn=pgn_game['raw_pgn'])
+            game.save()
+    except Exception as error:
+        result = 'Unable to import games. Details: %s' % error
+
+    return result
+
 def upload_pgn(pgn_file, user, users_game):
     """
     Uploads a PGN file for the user.
@@ -181,10 +228,10 @@ def upload_pgn(pgn_file, user, users_game):
     Returns:
         An error string if the game could not be uploaded, else None.
     """
-    error = None
+    result = None
 
     if pgn_file.size > 10000:
-        error = 'Please only submit files less than 10,000 bytes.'
+        result = 'Please only submit files less than 10,000 bytes.'
     else:
         parser = PGNParser(pgn_file.read())
 
@@ -211,6 +258,6 @@ def upload_pgn(pgn_file, user, users_game):
                 raw_pgn=pgn_file)
             game.save()
         except Exception as error:
-            error = 'Unable to parse PGN file. Details: %s' % error # TODO
+            result = 'Unable to parse PGN file. Details: %s' % error # TODO
 
-    return error
+    return result

@@ -7,22 +7,28 @@
     <form action="import" method="post" enctype="multipart/form-data" class="form-horizontal">{% csrf_token %}
       <legend>Import Games from Chess.com</legend>
 
+      {% if import_error %}
       <div class="form-group">
-        <label for="id_username" class="col-lg-2 control-lable">Username</label>
+        <p class="text-danger">{{ import_error }}</p>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_chesscom_username" class="col-lg-2 control-lable">Chess.com username</label>
         <div class="col-lg-10">
-         {{ import_form.username }}
-         {% if import_form.username.errors %}
-         <p class="text-danger">{{ import_form.username.errors|striptags }}</p>
+         {{ import_form.chesscom_username }}
+         {% if import_form.chesscom_username.errors %}
+         <p class="text-danger">{{ import_form.chesscom_username.errors|striptags }}</p>
          {% endif %}
         </div>
       </div>
     
       <div class="form-group">
-        <label for="id_password" class="col-lg-2 control-lable">My games</label>
+        <label for="id_users_game" class="col-lg-2 control-lable">My games</label>
         <div class="col-lg-10">
-         {{ import_form.password }}
-         {% if import_form.password.errors %}
-         <p class="text-danger">{{ import_form.password.errors|striptags }}</p>
+         {{ import_form.users_game }}
+         {% if import_form.users_game.errors %}
+         <p class="text-danger">{{ import_form.users_game.errors|striptags }}</p>
          {% endif %}
         </div>
       </div>
