@@ -6,6 +6,8 @@
 # Imports
 # ------------------------------------------------------------------------------
 
+import thread
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -122,7 +124,7 @@ def import_games(request):
             if form.is_valid():
                 chesscom_username = form.cleaned_data['chesscom_username']
                 users_game = form.cleaned_data['users_game']
-                error = import_chesscom_games(request.user,
+                error = handle_imports(request.user,
                     chesscom_username,
                     users_game)
                 if not error:
@@ -152,7 +154,9 @@ def games(request):
     context = {}
 
     users_games = ChessGame.objects.filter(uploaded_by=request.user)
+    users_jobs = ImportJob.objects.filter(user=request.user)
     context['users_games'] = users_games
+    context['users_jobs'] = users_jobs
 
     return render(request,
         'users/games.html',
@@ -183,6 +187,20 @@ def signup_user(username, password):
 
     return result
 
+def handle_imports(user, username, users_games):
+    """
+    Begins crawling Chess.com for the user's games -- but in the background. A
+    job is created to track this progress so the user can view the job status
+    from the games page.
+
+    Arguments:
+        user<User>        -- User requesting the import.
+        username<string>  -- Username of Chess.com member.
+        users_games<bool> -- True if the username provided is the user.
+    """
+    thread.start_new_thread(import_chesscom_games,
+        (user, username, users_games))
+
 def import_chesscom_games(user, username, users_games):
     """
     Attempts to crawl Chess.com in search of a user's games, then imports them.
@@ -192,14 +210,6 @@ def import_chesscom_games(user, username, users_games):
         username<string>  -- Username of Chess.com member.
         users_games<bool> -- True if the username provided is the user.
     """
-    result = None
-
-    # TODO: The following forks and executes asynchronously, while we return to
-    # caller. Crawler receives an ImportJob object and updates the object during
-    # it's progress. The view for games sends the template an import job if one
-    # exists for the user, so they can see the progress. Meanwhile, after we
-    # fork and return, the caller returns the user to the games page, where they
-    # will see the job's progress. This could be a good candidate for Redis.
     crawler = UserGamesCrawler(username)
     job = ImportJob.objects.create(user=user, games_processed=0)
     live_games = crawler.get_live_games(user, job)
@@ -223,8 +233,6 @@ def import_chesscom_games(user, username, users_games):
         result = 'Unable to import games. Details: %s' % error
 
     job.delete()
-
-    return result
 
 def upload_pgn(pgn_file, user, users_game):
     """
