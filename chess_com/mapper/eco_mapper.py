@@ -74,7 +74,7 @@ class ECOMapper(object):
             A list of tuples, where a tuple contains the move number, white's
             move, and black's move, e.g.: [(1, Nf3, d5)].
         """
-        result = None
+        result = []
 
         try:
             exp = '(?P<num>\d+)\.(?P<white>\w+) (?P<black>[\d|\w|-]+)'
