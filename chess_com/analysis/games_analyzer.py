@@ -161,14 +161,14 @@ class GamesAnalyzer(object):
         """
         current_labels = len(labels)
 
-        sweep_index = 2
+        n = 2
         while current_labels > self.max_labels:
             for index, label in enumerate(labels):
-                if index % sweep_index == 0:
+                if index % n != 0:
                     labels[index] = ''
 
             current_labels = len(filter(lambda x: x != '', labels))
-            sweep_index += 1
+            n *= 2
 
     def scratch_openings(self, openings):
         """
