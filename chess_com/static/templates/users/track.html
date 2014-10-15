@@ -70,7 +70,7 @@
     {% for name, data in white_games %}
       <li>{{ name }}</li>
       <ul>
-        <li>Played: {{ data.played }}</li>
+        <li>Played: {{ data.total }}</li>
         <li>Won: {{ data.won }}</li>
         <li>Lost: {{ data.lost }}</li>
         <li>Drawn: {{ data.drawn }}</li>
@@ -85,7 +85,7 @@
     {% for name, data in black_games %}
       <li>{{ name }}</li>
       <ul>
-        <li>Played: {{ data.played }}</li>
+        <li>Played: {{ data.total }}</li>
         <li>Won: {{ data.won }}</li>
         <li>Lost: {{ data.lost }}</li>
         <li>Drawn: {{ data.drawn }}</li>
