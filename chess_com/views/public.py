@@ -72,7 +72,7 @@ def signin(request):
             user = authenticate(username=username, password=password)
             if user:
                 login(request, user)
-                return redirect('main')
+                return redirect('track')
             else:
                 context['signin_error'] = 'Username/password is incorrect.'
                 context['signin_form'] = form

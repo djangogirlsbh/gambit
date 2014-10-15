@@ -30,7 +30,7 @@ class ChessGame(models.Model):
 
     uploaded_by = models.ForeignKey(User)
     users_game = models.BooleanField()
-    chesscom_id = models.BigIntegerField(blank=True)
+    chesscom_id = models.BigIntegerField(blank=True, null=True)
 
     raw_pgn = models.CharField(max_length=10000)
 

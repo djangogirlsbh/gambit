@@ -6,7 +6,7 @@
 # Imports
 # ------------------------------------------------------------------------------
 
-import thread
+from thread import start_new_thread
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
@@ -14,6 +14,7 @@ from django.template import RequestContext
 
 from chess_com.crawler.chesscom_crawler import UserGamesCrawler
 from chess_com.forms.users import ImportChesscomForm, UploadPGNGameForm
+from chess_com.mapper.eco_mapper import ECOMapper
 from chess_com.models.models import ChessGame, ImportJob
 from chess_com.parser.pgn_parser import PGNParser
 
@@ -25,13 +26,17 @@ from chess_com.parser.pgn_parser import PGNParser
 def import_games(request):
     context = {}
 
+    # POST request
     if request.method == 'POST':
+
+        # User uploading single PGN game
         if 'upload' in request.POST:
             form = UploadPGNGameForm(request.POST, request.FILES)
             if form.is_valid():
                 pgn_file = request.FILES['pgn_file']
                 users_game = form.cleaned_data['users_game']
                 error = upload_pgn(pgn_file, request.user, users_game)
+
                 if not error:
                     return redirect('games')
                 else:
@@ -39,21 +44,19 @@ def import_games(request):
                     context['upload_form'] = form
             else:
                 context['upload_form'] = form
+
+        # User importing Chess.com games
         elif 'import' in request.POST:
             form = ImportChesscomForm(request.POST)
             if form.is_valid():
                 chesscom_username = form.cleaned_data['chesscom_username']
                 users_game = form.cleaned_data['users_game']
-                error = handle_imports(request.user,
-                    chesscom_username,
-                    users_game)
-                if not error:
-                    return redirect('games')
-                else:
-                    context['import_error'] = error
-                    context['import_form'] = form
+                handle_imports(request.user, chesscom_username, users_game)
+                return redirect('games')
             else:
                 context['import_form'] = form
+
+    # Non-POST request
     else:
         context['upload_form'] = UploadPGNGameForm()
         context['import_form'] = ImportChesscomForm()
@@ -226,8 +229,8 @@ def handle_imports(user, username, users_games):
         username<string>  -- Username of Chess.com member.
         users_games<bool> -- True if the username provided is the user.
     """
-    thread.start_new_thread(import_chesscom_games,
-        (user, username, users_games))
+    thread_args = (user, username, users_games)
+    start_new_thread(import_chesscom_games, thread_args)
 
 def import_chesscom_games(user, username, users_games):
     """
@@ -240,10 +243,18 @@ def import_chesscom_games(user, username, users_games):
     """
     crawler = UserGamesCrawler(username)
     job = ImportJob.objects.create(user=user, games_processed=0)
-    live_games = crawler.get_live_games(user, job)
+    live_games = []
 
     try:
-        for pgn_game in live_games:
+        games = crawler.get_live_games(user, job)
+        live_games.extend(games)
+    except Exception as error:
+        message = 'import_chesscom_games() had trouble getting live games. ' \
+            'Details: %s' % error
+        print ' '.join(['[ERROR]', message])
+
+    for pgn_game in live_games:
+        try:
             game = ChessGame.objects.create(white_name=pgn_game['white_name'],
                 black_name=pgn_game['black_name'],
                 white_rating=pgn_game['white_rating'],
@@ -258,8 +269,10 @@ def import_chesscom_games(user, username, users_games):
                 chesscom_id=pgn_game['chesscom_id'],
                 raw_pgn=pgn_game['raw_pgn'])
             game.save()
-    except Exception as error:
-        result = 'Unable to import games. Details: %s' % error
+        except Exception as error:
+            message = 'import_chesscom_games() could not save game. ' \
+                'Details: %s' % error
+            print ' '.join(['[ERROR]', message])
 
     job.delete()
 
@@ -280,7 +293,8 @@ def upload_pgn(pgn_file, user, users_game):
     if pgn_file.size > 10000:
         result = 'Please only submit files less than 10,000 bytes.'
     else:
-        parser = PGNParser(pgn_file.read())
+        pgn_data = pgn_file.read()
+        parser = PGNParser(pgn_data)
         mapper = ECOMapper()
 
         white_name = parser.extract_white_name()
@@ -291,7 +305,7 @@ def upload_pgn(pgn_file, user, users_game):
         time_control = parser.extract_time_control()
         total_moves = parser.extract_total_moves()
         date_played = parser.extract_date_played()
-        eco_details = mapper.get_eco_details(pgn_file.read())
+        eco_details = mapper.get_eco_details(pgn_data)
 
         try:
             game = ChessGame.objects.create(white_name=white_name,
@@ -305,9 +319,9 @@ def upload_pgn(pgn_file, user, users_game):
                 eco_details=eco_details,
                 uploaded_by=user,
                 users_game=users_game,
-                raw_pgn=pgn_file)
+                raw_pgn=pgn_data)
             game.save()
         except Exception as error:
-            result = 'Unable to parse PGN file.'
+            result = 'Sorry, unable to parse PGN file.'
 
     return result
