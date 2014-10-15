@@ -6,11 +6,10 @@
 # Imports
 # ------------------------------------------------------------------------------
 
-from bs4 import BeautifulSoup
-import re
 from time import sleep
 from urllib2 import urlopen
 
+from archive_page import ArchivePage
 from chess_com.mapper.eco_mapper import ECOMapper
 from chess_com.models.models import ChessGame
 from chess_com.parser.pgn_parser import PGNParser
@@ -70,17 +69,16 @@ class UserGamesCrawler(object):
         """
         result = []
 
-        recent_game_id = self.get_recent_game_id(user)
+        last_game_id = self.get_last_game_id(user)
         crawl_url = self.make_crawl_url(self.GAME_TYPES['live'])
-        page = urlopen(crawl_url).read()
-        page_number = 1
+        page = ArchivePage(crawl_url)
 
-        while page:
-            game_ids = map(int, self.get_game_ids(page))
+        while page.page_opened:
+            game_ids = page.get_game_ids()
 
             for game_id in game_ids:
-                if game_id <= recent_game_id:
-                    page = None
+                if game_id <= last_game_id:
+                    page.page_opened = False
                     break
 
                 game = self.extract_pgn_data(game_id)
@@ -88,40 +86,10 @@ class UserGamesCrawler(object):
 
                 job.games_processed += 1
                 job.save()
+
                 sleep(2)
 
-            page = self.next_page(page, page_number)
-            page_number += 1
-
-        return result
-
-    def get_turnbased_games(self):
-        """
-        """
-        params = self.BASE_ARCHIVE_PARAMS % (self.GAME_TYPES['turnbased'],
-            self.username)
-        url = self.BASE_ARCHIVE_URL + params
-
-    def get_game_ids(self, html):
-        """
-        Returns a list of the game IDs found on the details page.
-
-        Arguments:
-            html<string> -- Full HTML of a page.
-
-        Returns:
-            List of game IDs.
-        """
-        result = []
-
-        soup = BeautifulSoup(html)
-        game_rows = soup.find_all('tr', id=re.compile('c14_row'))
-
-        for row in game_rows:
-            tds = row.find_all('td')
-            link = tds[7].a['href']
-            matches = re.search('id=(?P<id>\d+)', link)
-            result.append(matches.group('id'))
+            page.next_page()
 
         return result
 
@@ -130,69 +98,66 @@ class UserGamesCrawler(object):
         Attempts to download and parse PGN data. If found, attempts to parse it
         and return a dictionary of parsed data. Possible keys in the dictionary
         are:
-                * white_name
-                * black_name
-                * white_rating
-                * black_rating
-                * game_result
-                * time_control
-                * total_moves
-                * date_played
-                * raw_pgn
-                * chesscom_id
-                * eco_details
+            * white_name
+            * black_name
+            * white_rating
+            * black_rating
+            * game_result
+            * time_control
+            * total_moves
+            * date_played
+            * raw_pgn
+            * chesscom_id
+            * eco_details
 
         Arguments:
             game_id<int> -- Chess.com game ID.
 
         Returns:
-            Dictionary of parsed PGN data or None if not found.
+            Dictionary of parsed PGN data.
         """
         result = {}
 
-        url = self.BASE_DOWNLOAD_PATH % str(game_id)
-        pgn_data = urlopen(url).read()
-        parser = PGNParser(pgn_data)
-        mapper = ECOMapper()
+        pgn_data = self.download_pgn(game_id)
 
-        result['white_name'] = parser.extract_white_name()
-        result['black_name'] = parser.extract_black_name()
-        result['white_rating'] = parser.extract_white_rating()
-        result['black_rating'] = parser.extract_black_rating()
-        result['game_result'] = parser.extract_game_result()
-        result['time_control'] = parser.extract_time_control()
-        result['total_moves'] = parser.extract_total_moves()
-        result['date_played'] = parser.extract_date_played()
-        result['raw_pgn'] = pgn_data
-        result['chesscom_id'] = game_id
-        result['eco_details'] = mapper.get_eco_details(pgn_data)
+        if pgn_data:
+            parser = PGNParser(pgn_data)
+            mapper = ECOMapper()
+
+            result['white_name'] = parser.extract_white_name()
+            result['black_name'] = parser.extract_black_name()
+            result['white_rating'] = parser.extract_white_rating()
+            result['black_rating'] = parser.extract_black_rating()
+            result['game_result'] = parser.extract_game_result()
+            result['time_control'] = parser.extract_time_control()
+            result['total_moves'] = parser.extract_total_moves()
+            result['date_played'] = parser.extract_date_played()
+            result['raw_pgn'] = pgn_data
+            result['chesscom_id'] = game_id
+            result['eco_details'] = mapper.get_eco_details(pgn_data)
 
         return result
 
-    def next_page(self, html, page_number):
+    def download_pgn(self, game_id):
         """
-        Looks for the next page listing the user's games. If it finds it,
-        returns the HTML contents, otherwise returns None.
+        Attempt to download the PGN contents of a Chess.com game.
 
         Arguments:
-            html<string>     -- Full HTML on the current page.
-            page_number<int> -- Page currently viewed.
+            game_id<int> -- Chess.com game ID.
 
         Returns:
-            The HTML contents of the next page, or None if there is not one.
+            The contents of the PGN file as a string, or None if file could not
+            be read.
         """
         result = None
 
         try:
-            soup = BeautifulSoup(html)
-            anchors = soup.find_all('a',
-                href=re.compile('page=%d$' % (page_number + 1)))
-            path = anchors[0]['href']
-            accurate_path = path[1:] if path[0] == '/' else path
-            url = self.BASE_URL + accurate_path
+            url = self.BASE_DOWNLOAD_PATH % str(game_id)
             result = urlopen(url).read()
-        except Exception:
-            pass
+        except Exception as error:
+            message = 'UserGamesCrawler.download_pgn() unable to download ' \
+                'PGN contents. Details: %s' % error
+            print ' '.join(['[WARN]', message])
 
         return result
 
@@ -210,7 +175,7 @@ class UserGamesCrawler(object):
         url = self.BASE_ARCHIVE_URL + params
         return url
 
-    def get_recent_game_id(self, user):
+    def get_last_game_id(self, user):
         """
         Finds the Chess.com ID of the the most recently played game currently
         available in the database.
@@ -223,12 +188,18 @@ class UserGamesCrawler(object):
         """
         result = -1
 
-        users_games = ChessGame.objects.filter(uploaded_by=user,
-            chesscom_id__isnull=False)
-        games_ordered = users_games.order_by('chesscom_id')
+        try:
+            users_games = ChessGame.objects.filter(uploaded_by=user,
+                users_game=True,
+                chesscom_id__isnull=False)
+            games_ordered = users_games.order_by('chesscom_id')
 
-        if games_ordered:
-            most_recent_game = games_ordered[len(games_ordered) - 1]
-            result = most_recent_game.chesscom_id
+            if games_ordered:
+                most_recent_game = games_ordered[len(games_ordered) - 1]
+                result = most_recent_game.chesscom_id
+        except Exception as error:
+            message = 'UserGamesCrawler.get_last_game_id() could not find ' \
+                'user\'s most recently played game. Details: %s' % error
+            print ' '.join(['[WARN]', message])
 
         return result
