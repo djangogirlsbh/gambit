@@ -34,6 +34,9 @@ class ChessGame(models.Model):
 
     raw_pgn = models.CharField(max_length=10000)
 
+    class Meta:
+        app_label= 'chess_com'
+
 class ImportJob(models.Model):
     """
     Represents a currently executing job to import a user's Chess.com games.
@@ -41,3 +44,6 @@ class ImportJob(models.Model):
     """
     user = models.ForeignKey(User)
     games_processed = models.IntegerField()
+
+    class Meta:
+        app_label= 'chess_com'

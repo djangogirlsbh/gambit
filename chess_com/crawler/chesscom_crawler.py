@@ -11,11 +11,9 @@ import re
 from time import sleep
 from urllib2 import urlopen
 
-from django.contrib.auth.models import User
-
-from eco_mapper import ECOMapper
-from models import ChessGame
-from pgn_parser import PGNParser
+from chess_com.mapper.eco_mapper import ECOMapper
+from chess_com.models.models import ChessGame
+from chess_com.parser.pgn_parser import PGNParser
 
 # ------------------------------------------------------------------------------
 # Classes
