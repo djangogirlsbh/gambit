@@ -1,4 +1,56 @@
 {% extends 'base/page.html' %}
 {% block content %}
-about
+<div class="col-lg-12">
+{% load staticfiles %}
+  <div class="well well-lg row">
+    <div class="col-lg-4">
+      <img src="{% static "img/import.jpg" %}" class="img-responsive img-circle img-thumbnail">
+    </div>
+    <div class="col-lg-8">
+      <h2>Store your games</h2>
+      <p>Make it easy to save your games, whether you're looking to
+      automatically import your Chess.com games or you want to upload GM games
+      for later study:</p>
+      <ul>
+        <li>Automatically load Chess.com games</li>
+        <li>Upload a single PGN file</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="well well-lg row">
+    <div class="col-lg-4">
+      <img src="{% static "img/track.jpg" %}" class="img-responsive img-circle img-thumbnail">
+    </div>
+    <div class="col-lg-8">
+      <h2>Track your progress</h2>
+      <p>Gambit provides statistics based on your Chess.com games to help you
+      track your progress and dig into potential weaknesses. To start, you can:</p>
+      <ul>
+        <li>View your rating per game over time</li>
+        <li>Check your win/loss/draw rates as white and black</li>
+        <li>Find your most commonly played openings and their win/loss/draw stats</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="well well-lg row">
+    <div class="col-lg-4">
+      <h1>IMG</h1>
+    </div>
+    <div class="col-lg-8">
+      <h2>Analyze your games</h2>
+      <p>Use an engine to review your games. You'll find the tricky tactical
+      shots you missed, sharper opening lines, and missed blunders.</p>
+    </div>
+  </div>
+
+  <div class="well well-lg">
+    <div class="col-lg-4"></div>
+    <div class="col-lg-4">
+      <a href="register" class="btn btn-primary btn-lg">Create an account</a>
+    </div>
+    <div class="col-lg-4"></div>
+  </div>
+</div>
 {% endblock %}

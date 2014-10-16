@@ -31,7 +31,6 @@
             {% else %}
             <li><a href="about">About</a></li>
             <li><a href="register">Register</a></li>
-            <li><a href="contact">Contact</a></li>
             {% endif %}
           </ul>
           <ul class="nav navbar-nav navbar-right">
@@ -48,6 +47,9 @@
 
     <div class="container">
     {% block content %}{% endblock %}
+    <footer>
+    <p class="text-muted">Copyright &copy; 2014 Jonathan Neufeld Some Rights Reserved</p>
+    </footer>
     </div>
     <script src="{% static "js/jquery-1.10.2.min.js" %}"></script>
     <script src="{% static "js/bootstrap.min.js" %}"></script>
