@@ -73,7 +73,7 @@ def track(request):
 
     games = ChessGame.objects.filter(uploaded_by=request.user,
         users_game=True,
-        chesscom_id__isnull=False)
+        chesscom_id__isnull=False).order_by('-chesscom_id')
     stats = None
 
     if len(games) < 2:
