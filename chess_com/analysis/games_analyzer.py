@@ -150,6 +150,7 @@ class GamesAnalyzer(object):
                 self.LOST: 0,
                 self.DRAWN: 0,
             }
+            openings[eco_details][result] += 1
 
     def scratch_labels(self, labels):
         """
